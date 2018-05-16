@@ -584,7 +584,7 @@ func (p *OAuthProxy) OAuthCallback(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if !strings.HasPrefix(redirect, "/") || strings.HasPrefix(redirect, "//") {
+	if !p.IsValidRedirect(redirect) {
 		redirect = "/"
 	}
 
