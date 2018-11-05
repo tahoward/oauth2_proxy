@@ -1,14 +1,26 @@
 #!/bin/bash
-EXIT_CODE=0
+
+# Exit the script if the given command fails.
+function check {
+  "$@"
+  status=$?
+  if [ $status -ne 0 ]; then
+    echo "ERROR: Encountered error (${status}) while running the following:" >&2
+    echo "           $@"  >&2
+    echo "       (at line ${BASH_LINENO[0]} of file $0.)"  >&2
+    echo "       Aborting." >&2
+    exit $status
+  fi
+}
+
 echo "gofmt"
-diff -u <(echo -n) <(gofmt -d $(find . -type f -name '*.go' -not -path "./vendor/*")) || EXIT_CODE=1
+check diff -u <(echo -n) <(gofmt -d $(find . -type f -name '*.go' -not -path "./vendor/*"))
 for pkg in $(go list ./... | grep -v '/vendor/' ); do
     echo "testing $pkg"
     echo "go vet $pkg"
-    go vet "$pkg" || EXIT_CODE=1
+    check go vet "$pkg"
     echo "go test -v $pkg"
-    go test -v -timeout 90s "$pkg" || EXIT_CODE=1
+    check go test -v -timeout 180s "$pkg"
     echo "go test -v -race $pkg"
-    GOMAXPROCS=4 go test -v -timeout 90s0s -race "$pkg" || EXIT_CODE=1
+    GOMAXPROCS=4 check go test -v -timeout 180s -race "$pkg"
 done
-exit $EXIT_CODE
